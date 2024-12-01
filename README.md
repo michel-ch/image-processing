@@ -61,6 +61,8 @@ As with any unit test, it is also possible that the unit tests suffer from false
 NL_Means
 
 [Article](https://github.com/michel-ch/traitement-images/blob/main/image/NL_Means.pdf)
+
 [Report](https://github.com/michel-ch/traitement-images/blob/main/image/Compte%20rendu%20NL%20Mean%20CHEN%20Michel.pdf)
+
 [Code](https://github.com/michel-ch/traitement-images/tree/main/image/nlmeansC)
 
