@@ -1,0 +1,286 @@
+.. _Convolution:
+
+Convolution
+===========
+
+
+Les exercices Ã  realiser sont situes dans la base de code que vous recuperez en vous inscrivant sur le lien GitHub classroom recu par mail [1]_. Lisez bien le readme du depot pour comprendre comment l'utiliser. La majorite des fonctions demandees existent dejÃ  dans OpenCV : **le but n'est pas d'utiliser les fonctions d'OpenCV mais de les coder vous meme !** Nous utiliserons donc uniquement les conteneurs de base d'OpenCV et les fontions d'entree/sortie.
+
+.. important::
+
+	**Au cours de ce chapitre, vous completerez le fichier ``tpConvolution.cpp`` que vous devrez pousser sur votre depot git avant la prochaine seance (cf. consignes detaillees envoyees par mail).**
+
+
+Filtre moyenneur
+****************
+
+Le filtre moyenneur est une operation de traitement d'images utilisee pour reduire le bruit dans une image et/ou flouter une image. Par exemple, l'application d'un filtre moyenneur sur l'image de gauche donne l'image de droite :
+
+.. rst-class:: center  
+
+	|cameraBruit| |cameraBruitMean|
+	
+
+.. |cameraBruit| image:: cameraBruit.png 
+	:width: 300px
+	
+.. |cameraBruitMean| image:: cameraBruitMean.png
+	:width: 300px
+	
+En zoomant, on peut voir en detail les effets du filtre; le bruit clairement visible dans le ciel a bien ete reduit mais les details du visage et de la camera sont floutes :
+
+.. rst-class:: center  
+
+	|cameraBruitZoom| |cameraBruitMeanZoom|
+	
+
+.. |cameraBruitZoom| image:: cameraBruitZoom.png 
+	:width: 300px
+	
+.. |cameraBruitMeanZoom| image:: cameraBruitMeanZoom.png
+	:width: 300px
+
+Le filtre moyenneur fait parti de la categorie des filtres d'images locaux car pour calculer la nouvelle valeur d'un pixel, il regarde la valeur des pixels proches. Concretement, la valeur filtree d'un pixel :math:`p` est egale Ã  la moyenne des valeurs des pixels proches de :math:`p`. En general, on definit les "pixels proches de :math:`p`" comme l'ensemble de pixels contenus dans un carre de largeur :math:`k` centre sur :math:`p` : 
+
+.. figure:: exMean3x3.png
+	:width: 450px
+	:align: center
+	
+	Avec un filtre moyenneur de largeur :math:`3`, pour calculer la nouvelle valeur du pixel rouge de l'image originale de gauche, on calcule la valeure moyenne des pixels situes dans un carre de dimension :math:`3\times 3` centre sur ce pixel. Cela donne la nouvelle valeur du pixel sur l'image transformee (pixel vert sur l'image de droite) : :math:`\frac{42+111+154+23+123+176+63+145+134}{9}=108`
+
+Cette operation est repetee pour tous les pixels de l'image. On parle de *fenetre glissante* pour caracteriser le carre sur lequel est calcule la moyenne des pixels et qui se deplace sur l'image :
+
+.. figure:: convolution.gif
+	:align: center
+	
+	Illustration du principe de la fenetre glissante. La fenetre se deplace sur l'image du bas (en bleu) pour calculer les valeurs de la nouvelle image en haut (en vert). Source  `<https://github.com/vdumoulin/conv_arithmetic>`_.
+
+
+
+
+	
+	
+.. quiz:: tp4-mean
+	:title: Filtre moyenneur
+	
+	Implementez le filtre moyenneur  dans la fonction ``meanFilter`` du fichier ``tpConvolution.cpp``. Pensez Ã  valider votre implemantion avec la commande ``test``. 
+	
+	Notez que pour une valeur de parametre :math:`k`, la fenetre de calcul Ã  utiliser est de taille :math:`2k+1` : cette pratique commune permet de garantir que la fenetre consideree est de dimension impaire et donc que son centre tombe precisement sur un pixel de coordonnees entieres.
+	
+Convolution
+***********
+
+La *convolution*, ou *produit de convolution*, est une generalisation du filtre moyenneur oÃ¹ l'on considere cette fois une moyenne ponderee. La fenetre glissante est alors elle meme une image qui contient les coefficients de ponderation. On l'appelle generalement *noyau de convolution* ou *masque de convolution* (*kernel* ou *mask* en anglais) :
+
+.. figure:: conv2.png
+	:width: 450px
+	:align: center
+	
+	Le noyau de convolution (au centre) contient les coefficients de ponderation. Le principe est alors similaire au filtre moyenneur : pour calculer la nouvelle valeur d'un pixel Ã  droite, on calcule la moyenne des pixels de l'image originale (Ã  gauche) se trouvant sous le masque de convolution ponderee par les valeurs du masque.
+	
+Formellement, le produit de convolution est une operation entre deux images en niveau de gris  :math:`f` et :math:`g`, notee :math:`f*g` defini par:
+
+.. math::
+
+	\forall (x,y)\in\mathbb{Z}^2, (f*g)(x,y)=\sum_{i=-\infty}^{\infty}\sum_{j=-\infty}^{\infty}f(i,j)g(x-i,y-j)
+	
+Dans cette expression on peut reconnaitre:
+
+* :math:`g(x-i,y-j)` : qui comporte une operation de translation par le vecteur :math:`(x,y)` et une symetrie centrale (inversion des coordonnees :math:`i` et :math:`j`) : il s'agit du deplacement de l'image :math:`g` Ã  la position :math:`(x,y)` (:math:`g` joue donc le role de fenetre glissante). La symetrie centrale est presente pour une raison technique et n'a pas vraiment d'importance en pratique,
+* la multiplication *point Ã  point* de :math:`f` par la translatee de :math:`g` : c'est l'operation de ponderation,
+* la sommation du tout : c'est l'operation de moyennage.
+
+Le produit de convolution est une application bilineaire, associative et commutative. C'est-Ã -dire que pour toutes images :math:`f`, :math:`g`, :math:`h` et pour tout scalaire :math:`\lambda`, on a :
+
+* :math:`f\ast (g+\lambda h)=(f\ast g)+\lambda (f\ast h)`;
+* :math:`(f\ast g)\ast h=f\ast (g\ast h)`;
+* :math:`f\ast g=g\ast f`. 
+
+Le choix du noyau de convolution va permettre d'obtenir differents effets :
+
+.. list-table:: Exemple de convolutions (source images: `Wikipedia <https://en.wikipedia.org/wiki/Kernel_(image_processing)>`_)
+	:widths: 10 10 5
+	:header-rows: 1
+
+	*	- Effet
+		- Noyau
+		- Resultat
+	*	- Identite (ne fait rien...)
+		- :math:`\begin{bmatrix} 1\end{bmatrix}`
+		- |exId|
+	*	- Filtre moyenneur (lissage)
+		- :math:`\frac{1}{9}\begin{bmatrix} 1 & 1 & 1 \\ 1 & 1 & 1 \\ 1 & 1 & 1\end{bmatrix}`
+		- |exMean|
+	*	- Filtre gaussien :math:`3 \times 3` (lissage)
+		- :math:`\frac{1}{16}\begin{bmatrix} 1 & 2 & 1 \\ 2 & 4 & 2 \\ 1 & 2 & 1\end{bmatrix}`
+		- |exGauss3|
+	*	- Filtre gaussien :math:`5 \times 5` (lissage)
+		- :math:`\frac{1}{256}\begin{bmatrix} 1 & 4 & 6 & 4 & 1  \\ 4 & 16 & 24 & 16 & 4 \\ 6 & 24 & 36 & 24 & 6 \\ 4 & 16 & 24 & 16 & 4 \\ 1 & 4 & 6 & 4 & 1 \end{bmatrix}`
+		- |exGauss5|
+	*	- Filtre rehausseur (renforce les contours)
+		- :math:`\begin{bmatrix} 0 & -1 & 0 \\ -1 & 5 & -1 \\ 0 & -1 & 0\end{bmatrix}`
+		- |exSharp|
+	*	- Filtre Laplacien (detecteur de contours)
+		- :math:`\begin{bmatrix} 0 & 1 & 0 \\ 1 & -4 & 1 \\ 0 & 1 & 0\end{bmatrix}`
+		- |exLaplacien|
+
+		
+.. |exId| image:: Vd-Orig.png
+
+.. |exMean| image:: Vd-Blur2.png
+
+.. |exGauss3| image:: Vd-Blur1.png
+
+.. |exGauss5| image:: Vd-Blur_Gaussian_5x5.png
+
+.. |exSharp| image:: Vd-Sharp.png
+
+.. |exLaplacien| image:: Vd-Edge2.png
+
+.. quiz:: tp4-conv
+	:title: Produit de convolution
+	
+	Implementez le produit de convolution  dans la fonction ``convolution`` du fichier ``tpConvolution.cpp``. Pensez Ã  valider votre implemantion avec la commande ``test``. 
+	
+
+.. note::
+
+	Le produit de convolution est intimement lie Ã  la transformee de Fourier par le *theoreme de la convolution*. En effet si on note par :math:`F` et :math:`F^{-1}` la tranformee de Fourier et la transformee de Fourier inverse, on a l'egalite suivante :
+	
+	.. math::
+	
+		f*g = F^{-1}(F(f)\circ F(g))
+		
+	ou :math:`\circ{}` represente la multiplication point Ã  point, aussi appele *produit d'Hadamard* (on multiplie les 2 valeurs d'un meme pixel dans les 2 images). 
+	
+	Autrement dit, pour calculer :math:`f * g`, on peut proceder ainsi :
+	
+	1. on calcule les transformees de Fourier des images :math:`f` et :math:`g`,
+	2. on multiple les 2 resultats des transformees de Fourier entre eux,
+	3. on prend la transformee de Fourier inverse du resultat de la multiplication.
+
+	
+	Cette approche presente une complexite algorithmique inferieure au calcul *naÃ¯f* grace Ã  l'algorithme de transformee de Fourier rapide (`Fast Fourier Transform (FFT)  <https://en.wikipedia.org/wiki/Fast_Fourier_transform>`_). Neanmoins, la constante multiplicative est plus elevee qu'avec l'approche naÃ¯ve et la convolution de Fourier n'est interessante que lorsque le noyau de convolution est relativement grand (plusieurs dizaines de pixels de cote).
+	
+Detection de contours
+*********************
+
+La detection de contours consiste Ã  chercher les courbes continues le long des zones de fortes variations dans l'image. 
+Les experiences en neurosciences ont en effet montres que la detection de contours est une des premieres etapes realisees par le cortex visuel, suggerant leur importance pour les processus d'analyse d'images. 
+
+.. note::
+
+	L'etude du cortex visuel Ã  notamment progresse grace Ã  une serie d'experiences menees sur des chats dans les annees 60. Une des experiences constistait par exemple Ã  elever un chaton dans un environnement oÃ¹ seules des lignes verticales sont visibles; apres quelques semaines, on constatait alors l'absence de reponse du cortex visuel en presence de lignes horizontales, montrant ainsi que le cerveau du chat, en l'absence de stimulation appropriee, n'a pas pÃ» "entrainer son detecteur de contours" sur l'axe horizontal. Plus d'information `sur ce site <https://computervisionblog.wordpress.com/2013/06/01/cats-and-vision-is-vision-acquired-or-innate/>`_
+	
+	.. image:: catexperiment.gif
+		:align: center
+		:width: 150px
+	
+La detection de zones de variation des niveaux de gris de l'image correspond Ã  l'operation de derivation. 
+Comme une image numerique n'est pas une fonction continue, la notion de derivee n'est pas formellement definie et on utilisera un analogue appele *gradient*.
+Comme une image a 2 dimensions, le gradient de l'image :math:`f`, notee :math:`\nabla f`, est une image vectorielle, donnee par les deux derivees partielles : 
+
+.. math::
+
+	\nabla f = \left(\frac{\partial f}{\partial x}, \frac{\partial f}{\partial y}\right).
+	
+Sur l'exemple ci-dessous, on peut observer une image et ses 2 derivees partielles. On constate que les variations horizontales (respectivement verticales) apparaissent dans la derivee partielle :math:`\frac{\partial f}{\partial x}` (respectivement :math:`\frac{\partial f}{\partial y}`).
+
+ 
+
+.. list-table:: Gradient de l'image *camera*
+	:widths: 10 10 10
+
+	*	- |camera|
+		- |cameradx|
+		- |camerady|
+	*	- :math:`f`
+		- :math:`\frac{\partial f}{\partial x}`
+		- :math:`\frac{\partial f}{\partial y}`	
+
+.. |camera| image:: camera.png 
+	:width: 250px
+	
+.. |cameradx| image:: cameradx.png
+	:width: 250px
+	
+.. |camerady| image:: camerady.png
+	:width: 250px
+
+On peut egalement regarder le vecteur du gradient sous sa forme polaire :math:`(||\nabla f||, dir(\nabla f))`, avec :
+
+* :math:`||\nabla f||` la norme du gradient : :math:`||\nabla f|| = \sqrt{\left(\frac{\partial f}{\partial x}\right)^2+\left(\frac{\partial f}{\partial y}\right)^2}` ou, pour simplifier les calculs :math:`||\nabla f|| = \left|\frac{\partial f}{\partial x}\right|+\left|\frac{\partial f}{\partial y}\right|`
+
+* et :math:`dir(\nabla f)` la direction du gradient : :math:`dir(\nabla f)=\textrm{atan2}\left(\frac{\partial f}{\partial y},\frac{\partial f}{\partial x}\right)`
+
+Cela donne les images suivantes (notez que les niveaux de gris de  :math:`dir(\nabla f)` represente des angles et son interpretation visuelle n'est donc pas evidente) :
+
+.. list-table:: Gradient de l'image *camera* (forme polaire)
+	:widths: 10 10 10
+
+	*	- |camera|
+		- |cameraNormeGradient|
+		- |cameraDirGradient|
+	*	- :math:`f`
+		- :math:`||\nabla f||`
+		- :math:`dir(\nabla f)`
+
+	
+.. |cameraNormeGradient| image:: cameraNormeGradient.png
+	:width: 250px
+	
+.. |cameraDirGradient| image:: cameraDirGradient.png
+	:width: 250px
+
+En pratique, il n'existe pas de definition unique pour le calcul des derivees partielles :math:`\frac{\partial f}{\partial x}` et :math:`\frac{\partial f}{\partial y}`. Plusieurs solutions exprimables sous forme de produit de convolution ont ete proposees, celle que nous allons voir est appellee *gradient de Sobel*.
+
+La methode de Sobel definit les derivees partielles de la maniere suivante :
+
+.. math::
+
+	\frac{\partial f}{\partial x} = f * \begin{bmatrix} -1 & 0 & 1 \\ -2 & 0 & 2 \\ -1 & 0 & 1\end{bmatrix}
+	
+et 
+
+.. math::
+
+	\frac{\partial f}{\partial y} = f * \begin{bmatrix} 1 & 2 & 1 \\ 0 & 0 & 0 \\ -1 & -2 & -1\end{bmatrix}
+
+Le choix de ces noyaux peut s'expliquer en decomposant les noyaux de convolution selon leur contribution dans chacune des dimensions. Par exemple, pour la derivee partielle selon :math:`x`, on a :
+
+.. math::
+
+	\begin{bmatrix} -1 & 0 & 1 \\ -2 & 0 & 2 \\ -1 & 0 & 1\end{bmatrix} = \begin{bmatrix} 1 \\ 2 \\ 1\end{bmatrix} \begin{bmatrix} -1 & 0 & 1\end{bmatrix}
+	
+Dit autrement, le produit de convolution etant un application lineaire, on peut reecrire la definition de :math:`\frac{\partial f}{\partial x}` sous la forme :
+
+.. math::
+
+	\frac{\partial f}{\partial x} = \left(\left( f * \begin{bmatrix} 1 \\ 2 \\ 1\end{bmatrix} \right) *  \begin{bmatrix} -1 & 0 & 1\end{bmatrix} \right) 
+
+C'est Ã  dire qu'on commence par convoluer :math:`f` avec le noyau vertical, puis on convolue avec le noyau horizontal :
+
+* la premiere convolution realise un lissage de l'image sur l'axe vertical (le noyau utilise est la colonne centrale du noyau gaussien :math:`3 \times 3`),
+* la deuxieme convolution calcule, pour chaque pixel :math:`p`, la difference entre le pixel Ã  droite de :math:`p` et le pixel Ã  gauche de :math:`p` (c'est donc une mesure de variation).
+
+.. quiz:: tp4-Sobel
+	:title: Detecteur de contours de Sobel
+	
+	Implementez la fonction ``edgeSobel`` du fichier ``tpConvolution.cpp`` qui calcule la norme du gradient selon la methode de Sobel. Pensez Ã  valider votre implemantion avec la commande ``test``. 
+	
+Filtre bilateral
+****************
+
+L'objectif de ce dernier exercice est de reutiliser les elements acquis dans les exercices precedents pour comprendre et implementer une transformation decrite dans un autre contexte.
+
+L'operation de convolution est efficace pour debruiter une image et lisser les zones texturees. 
+Malheureusement, elle a egalement une forte tendance Ã  flouter les contours. 
+Il existe une variation de l'operation de convolution appelee filtre bilateral qui resoud ce probleme en introduisant une seconde ponderation afin de ne pas donner trop de poids Ã  un pixel dont la valeur est eloignee de la valeur du pixel courant. 
+
+.. quiz:: tp4-bilateralFitler
+	:title: Filtre bilateral
+	
+	Implementez le filtre bilateral dans la fonction ``bilateralFilter`` du fichier ``tpConvolution.cpp``. Pensez Ã  valider votre implemantion avec la commande ``test``. 
+	Cette methode est decrite sur de nombreux sites Web, par exemple `<https://people.csail.mit.edu/sparis/bf_course/slides/03_definition_bf.pdf>`_
+	
+.. [1] La base de code est egalement recuperable `ici <https://github.com/PerretB/ImageProcessingLab>`_

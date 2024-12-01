@@ -1,0 +1,258 @@
+.. _Morphology:
+
+Morphologie Mathematique
+========================
+
+Les exercices Ã  realiser sont situes dans la base de code que vous recuperez en vous inscrivant sur le lien GitHub classroom recu par mail [1]_. Lisez bien le readme du depot pour comprendre comment l'utiliser. La majorite des fonctions demandees existent dejÃ  dans OpenCV : **le but n'est pas d'utiliser les fonctions d'OpenCV mais de les coder vous meme !** Nous utiliserons donc uniquement les conteneurs de base d'OpenCV et les fontions d'entree/sortie.
+
+.. important::
+
+	**Au cours de ce chapitre, vous completerez le fichier ``tpMorphology.cpp`` que vous devrez pousser sur votre depot git avant la prochaine seance (cf. consignes detaillees envoyees par mail).**
+
+
+Filtre median
+*************
+
+L'idee du *filtre median* reprend le principe de la fenetre glissante mais ne s'interesse pas Ã  une combinaison lineaire des valeurs des pixels dans la fenetre (contrairement au produit de convolution).
+Au lieu de cela, on va trier les pixels situes sous la fenetre par ordre de niveau de gris croissant et prendre le pixel se trouvant au milieu : on parle d'element *median*.
+
+Par exemple, si l'on considere la liste de valeur :math:`(1, 3, 6, 9, 223)` : cette liste est triee et comporte 5 elements; le median de cette liste est le 3eme element, c'est-Ã -dire le 6.
+Par rapport Ã  la moyenne, le median Ã  l'avantage d'etre robuste aux valeurs extremes qui ne sont pas forcement representatives de la distribution des valeurs dans la liste.
+Dans le cas precedent, la moyenne vaut :math:`48.4`, elle est fortement influencee par la valeur :math:`223` qui n'est pas vraiment representative du reste des elements de la liste. Alors que le median Ã  :math:`6` semble effectivement mieux representer les valeurs de la liste.
+
+
+.. figure:: median.png
+	:align: center
+	:width: 450px
+
+	Calcule du filtre median sur une image. La fenetre est representee en bleue sur l'image d'origine (Ã  gauche). Les valeurs dans la fenetre sont triees (ligne du bas) et l'element median (134) est utilise comme nouvelle valeur sur le resultat (Ã  droite).
+
+.. note::
+
+	Les statistiques de l'INSEE sur les salaires en France presentent toujours des valeurs medianes et non des moyennes, sinon les tres hauts revennus influenceraient fortement le resultat sans pour autant etre representatifs de la population.
+	
+Le filtre median est particulierement efficace pour reduire le bruit *poivre et sel* oÃ¹ les pixels sont aleatoirement transformes en pixels blancs ou noirs :
+
+.. figure:: exMedian.png
+	:align: center
+	:width: 550px
+	
+	Exemple d'application du filtre median pour reduire le bruit poivre et sel d'une image. A gauche : image originale. Au centre : image artificiellement bruitee par du bruit poivre et sel, 1/10eme des pixels ont ete aleatoirement transformes en pixels noirs ou blancs. A droite : resultat d'application d'un filtre median :math:`3 \times 3` sur l'image bruitee. On constate que l'image est bien debruitee. Le filtre median introduit moins de flou que le filtre moyenneur.
+	
+
+.. quiz:: tp5-median
+	:title: Filtre median
+	
+	Implementez le filtre median dans la fonction ``median`` du fichier ``tpMorphology.cpp``. Pensez Ã  valider votre implemantion avec la commande ``test``. 
+	
+
+
+Erosion et dilatation
+*********************
+
+L'erosion et la dilatation sont deux operations opposees de la morphologie mathematique. 
+Alors que les filtres vus jusqu'Ã  present se concentrent sur la modification de niveaux de gris des pixels, la morphologie mathematique cherche Ã  modifier la forme des objets. 
+Ainsi, le role d'une erosion est de reduire la taille des objets dans une image alors que la dilatation va chercher Ã  les agrandir.
+
+Dilatation
+----------
+
+L'operation de dilatation utilise la notion *d'element structurant* qui generalise le concept de fenetre glissante. L'idee est que, pour pouvoir etudier la forme des objets, il faut pouvoir considerer des fenetres glissantes avec des formes plus complexe qu'un carre : par exemple des segments, des cercles, des triangles. Dans la pratique, un element structurant sera simplement une image binaire qui contient la forme d'interet.
+
+La dilatation d'une image Ã  niveaux de gris :math:`f:\mathbb{Z}^2\rightarrow\mathbb{R}` par une image binaire :math:`SE\subseteq\mathbb{Z}^2` (l'element structurant) est notee :math:`f \oplus SE` ou :math:`\delta_{SE}(f)`. Apres dilatation, la nouvelle valeur d'un pixel est donnee par la valeur maximale des pixels sous l'element structurant :
+
+.. math::
+
+	\forall x, (f\oplus SE)(x) = \delta_{SE}(f)(x) = \max_{p \in SE}f(x+p)
+
+Compare au filtre median : la fenetre n'est plus carre et on prend l'element :math:`\max` au lieu du median.
+Afin de bien visualiser le resultat de cette operation, il est plus simple de se limiter aux images binaires dans un premier temps :
+
+.. figure:: dilationBin.png
+	:align: center
+	
+	
+	Exemple de dilatations sur des images binaires. Sur la colonne de gauche, on voit l'image originale binaire : les pixels noirs sont consideres comme faisant partis de l'image. Sur la colonne du milieu, on voit les 3 elements structurants : 1 croix, 1 segment horizontal et 1 segment vertical. La colonne de droite montre le resultat de la dilatation de l'image par l'element structurant : le resultat est une image binaire oÃ¹ les pixels noirs et gris font partis de l'image (les pixels gris ont etes ajoutes Ã  l'image de gauche par la dilatation). On voit que la dilatation agrandit les objets presents dans l'image et que la direction et la taille de cet agrandissement dependent de la forme de l'element structurant.
+
+Dans le cas des images Ã  niveau de gris, on voit que la dilatation tend Ã  agradandir les zones claires selon la forme de l'element structurant :
+
+.. rst-class:: center 
+
+	|cameraDilC| |cameraDilH| |cameraDilV|
+	
+	*Dilatation de l'image camera par un element structurant circulaire, horizontal et vertical (de gauche Ã  droite).*
+
+.. |cameraDilC| image:: cameraDilC.png 
+	:width: 300px
+	
+.. |cameraDilH| image:: cameraDilH.png
+	:width: 300px
+	
+.. |cameraDilV| image:: cameraDilV.png
+	:width: 300px
+	
+.. quiz:: tp5-dilatation
+	:title: Dilatation
+	
+	Implementez la dilatation dans la fonction ``dilation`` du fichier ``tpMorphology.cpp``. Pensez Ã  valider votre implemantion avec la commande ``test``. 
+	
+Erosion
+-------
+
+L'erosion est obtenue de maniere similaire Ã  la dilatation en remplacant :math:`\max` par :math:`\min`. 
+Soient une image Ã  niveau de gris :math:`f:\mathbb{Z}^2\rightarrow\mathbb{R}` et une image binaire :math:`SE\subseteq\mathbb{Z}^2` (l'element structurant), l'erosion de :math:`f` par :math:`SE` est notee :math:`f \ominus SE` ou :math:`\epsilon_{SE}(f)` et est definie par :
+
+.. math::
+
+	\forall x, (f\oplus SE)(x) = \epsilon_{SE}(f)(x) = \min_{p \in SE}f(x+p)
+
+Comme pour la dilatation, afin de bien visualiser le resultat de cette operation, il est plus simple de se limiter aux images binaires dans un premier temps :
+	
+.. figure:: erosionBin.png
+	:align: center
+	
+	
+	Exemple d'erosions sur des images binaires. Sur la colonne de gauche, on voit l'image originale binaire : les pixels noirs sont consideres comme faisant partis de l'image. Sur la colonne du milieu, on voit les 3 elements structurants : 1 croix, 1 segment horizontal et 1 segment vertical. La colonne de droite montre le resultat de la dilatation de l'image par l'element structurant : le resultat est une image binaire oÃ¹ les pixels noirs font partis de l'image (les pixels gris ont etes retires Ã  l'image de gauche par l'erosion). On voit que l'erosion reduit la taille les objets presents dans l'image et que la direction et la taille de ce retrecissement dependent de la forme de l'element structurant.
+
+Dans le cas des images Ã  niveau de gris, on voit que l'erosion tend Ã  agradandir les zones sombres selon la forme de l'element structurant :
+
+.. rst-class:: center 
+
+	|cameraErlC| |cameraErlH| |cameraErlV|
+	
+	*Erosion de l'image camera par un element structurant circulaire, horizontal et vertical (de gauche Ã  droite).*
+
+.. |cameraErlC| image:: cameraErlC.png 
+	:width: 300px
+	
+.. |cameraErlH| image:: cameraErlH.png
+	:width: 300px
+	
+.. |cameraErlV| image:: cameraErlV.png
+	:width: 300px
+	
+.. important::
+
+	Erosion et dilatation sont des operations duales, cela veut dire que, etant donnee une image :math:`f` et un element structurant :math:`SE` :
+	
+	* dilater l'inverse d'une image est la meme chose que prendre l'inverse de l'erosion de cette image : :math:`\delta_{SE}(f) = -\epsilon_{SE}(-f,)`
+	* eroder l'inverse d'une image est la meme chose que prendre l'inverse de la dilation de cette image : :math:`\epsilon_{SE}(f) = -\delta_{SE}(-f)`
+	
+	Cette situation est illustree dans l'exemple ci-dessous :
+	
+	.. image:: dualite.png
+		:align: center
+
+.. quiz:: tp5-erosion
+	:title: Erosion
+	
+	Implementez l'erosion dans la fonction ``erode`` du fichier ``tpMorphology.cpp``. Pensez Ã  valider votre implemantion avec la commande ``test``. 
+	
+	Vous pouvez reutiliser la fonction ``dilate`` grace Ã  la dualite entre erosion et dilatation.
+	
+	
+Ouverture et fermeture
+**********************
+
+La composition des operations de dilatation et d'erosion permet de produire de nouveaux operateurs. Les deux plus simples sont la *fermeture* et *l'ouverture*.
+
+
+
+Pour un element structurant :math:`SE`, la *fermeture*  :math:`\gamma_{SE}` est definie comme une dilatation suivie d'une erosion : :math:`\phi_{SE}=\epsilon_{SE} \circ \delta_{SE}`. Cette operation bouche les *trous* plus petits que l'element structurant et laisse le reste presque inchange : 
+
+.. figure:: fermetureBin.png
+	:align: center
+	:width: 550px
+	
+	Example de fermetures avec un element structurant horizontal (colonne de gauche) et vertical (colonne de droite). La premiere ligne montre l'image de depart. La deuxieme ligne montre le resultat de la dilatation. La derniere ligne montre le resultat final de la fermeture (erosion des images de la ligne precedente). L'operation de fermeture a *rempli* les espaces vides dans lequel il ne pouvait pas tenir entierement.
+
+Sur une image en niveau de gris, la fermeture va eclaircir les petites zones sombres :
+
+.. figure:: cameraClose.png
+	:align: center
+	:width: 400px
+	
+	Fermeture sur l'image camera
+
+Pour un element structurant :math:`SE`, *l'ouverture* :math:`\phi_{SE}` est definie comme une erosion suivie d'une dilatation : :math:`\phi_{SE}=\delta_{SE} \circ \epsilon_{SE}`. Cette operation supprime les elements plus petits que l'element structurant et laisse les autres presque inchanges.
+
+.. figure:: ouvertureBin.png
+	:align: center
+	:width: 550px
+	
+	Example d'ouvertures avec un element structurant en croix (colonne de gauche) et horizontal (colonne de droite). La premiere ligne montre l'image de depart. La deuxieme ligne montre le resultat de l'erosion. La derniere ligne montre le resultat final de l'ouverture (dilatation des images de la ligne precedente). L'operation d'ouverture a *supprime* les elements dans lequel il ne pouvait pas tenir entierement.
+
+Sur une image en niveau de gris, l'ouverture va supprimer les petits elements clairs:
+
+.. figure:: cameraOpen.png
+	:align: center
+	:width: 400px
+	
+	Ouverture sur l'image camera
+	
+.. note::
+
+	Tout comme l'erosion et la dilatation, ouveture et fermeture sont des operations duales.
+	
+	L'ouverture et la fermeture sont des operations *idempotentes* : cela veut dire que l'application repetee d'un de ces operateurs ne sert Ã  rien : pour tout image :math:`f` et tout element structurant :math:`SE`, on a :
+	
+	* :math:`\phi_{SE}(\phi_{SE}(f)) = \phi_{SE}(f)` et
+	* :math:`\gamma_{SE}(\gamma_{SE}(f)) = \phi_{SE}(f)`.
+	
+.. quiz:: tp5-fermeture
+	:title: Fermeture
+	
+	Implementez la fermeture dans la fonction ``close`` du fichier ``tpMorphology.cpp``. Pensez Ã  valider votre implemantion avec la commande ``test``. 
+	
+.. quiz:: tp5-ouverture
+	:title: Ouverture
+	
+	Implementez l'ouverture dans la fonction ``open`` du fichier ``tpMorphology.cpp``. Pensez Ã  valider votre implemantion avec la commande ``test``. 
+
+Gradient morphologique
+**********************
+
+
+Les operateurs morphologiques permettent egalement de construire un *gradient morphologique*, contrepartie morphologique de la notion de gradient *lineiare* vue dans le chapitre sur le convolution.
+Pour une image :math:`f` et un element structurant :math:`SE`, on va definir un *gradient interne*, un *gradient externe* et un *gradient morphologique*. Les exemples presentes sont bases sur un element structurant en forme de croix et sur l'image binaire habituelle :
+
+.. image:: binary.png
+	:align: center
+
+* Le gradient interne est defini par :math:`f-(f\ominus SE)` la difference entre l'image et son erode, c'est-Ã -dire l'ensemble des pixels *retires* par l'erosion. On obtient le resultat suivant :
+	
+	.. image:: gradientInterne.png
+		:align: center
+	
+	
+* Le gradient externe est defini par  :math:`(f\oplus SE)-f` la difference entre le dilate et l'image, c'est-Ã -dire l'ensemble des pixels *ajoutes* par la dilatation. On obtient le resultat suivant :
+	
+	.. image:: gradientExterne.png
+		:align: center
+	
+* Le gradient morphologique est defini par :math:`(f\oplus SE)-(f\ominus SE)` combinaison des deux approches precedentes.On obtient le resultat suivant :
+
+	.. image:: gradientMorpho.png
+		:align: center
+	
+
+L'application sur des images Ã  niveaux de gris se fait sans probleme :
+	
+.. rst-class:: center 
+
+	|boat| |boatGradMorpho| 
+	
+	A gauche : image originale. A droite : gradient morphologique de l'image. 
+
+.. |boat| image:: boat.png 
+	:width: 300px
+	
+.. |boatGradMorpho| image:: boatGradMorpho.png
+	:width: 300px
+	
+.. quiz:: tp5-gradient
+	:title: Gradient morphologique
+	
+	Implementez le gradient morphologique dans la fonction ``morphologicalGradient`` du fichier ``tpMorphology.cpp``. Pensez Ã  valider votre implemantion avec la commande ``test``. 
+
+.. [1] La base de code est egalement recuperable `ici <https://github.com/PerretB/ImageProcessingLab>`_

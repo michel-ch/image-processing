@@ -1,0 +1,441 @@
+.. _Histogramme:
+
+Traitement d'histogramme
+========================
+
+Les exercices Ã  realiser sont situes dans la base de code que vous recuperez en vous inscrivant sur le lien GitHub classroom recu par mail [1]_. Lisez bien le readme du depot pour comprendre comment l'utiliser. La majorite des fonctions demandees existent dejÃ  dans OpenCV : **le but n'est pas d'utiliser les fonctions d'OpenCV mais de les coder vous mÃªme !** Nous utiliserons donc uniquement les conteneurs de base d'OpenCV et les fontions d'entree/sortie.
+
+.. important::
+
+	**Au cours de ce chapitre, vous completerez le fichier ``tpHistogram.cpp`` que vous devrez pousser sur votre depot git avant la prochaine seance (cf. consignes detaillees envoyees par mail).**
+
+
+
+Notion d'histogramme
+********************
+
+
+L'histogramme d'une image mesure la distribution des niveaux de gris dans l'image.
+Pour un niveau de gris ``x``, l'histogramme permet de connaitre la probabilite de tomber sur un pixel de valeur ``x`` en tirant un pixel au hasard dans l'image.
+
+Concretement, l'histogramme d'une image Ã  valeurs entieres est construit de la maniere suivante: pour chaque niveau de gris ``x``, on compte le nombre de pixels ayant la valeur ``x``. 
+
+Par exemple, soit l'image de 5 pixels par 5 pixels de cote avec des valeurs comprises entre 0 et 4 :
+
+.. csv-table:: 
+   :widths: 10, 10, 10, 10, 10
+
+   0,1,2,2,3
+   0,1,2,2,3
+   0,1,2,2,4
+   0,1,2,2,4
+   0,1,2,2,4
+
+Son histogramme est une fonction qui, Ã  chaque valeur de niveau de gris compris entre 0 et 4, associe le nombre de pixels ayant cette valeur:
+
+.. csv-table:: 
+   :widths: 35, 10, 10, 10, 10, 10 
+
+   Valeur de niveau de gris, 0, 1, 2, 3, 4
+   Nombre de pixels, 5, 5, 10, 2, 3
+   
+Ou bien, sous forme de diagramme baton :
+
+.. image:: histoDemo.png
+	:align: center
+	:width: 350px
+
+En divisant chaque valeur de l'histogramme par le nombre total de pixels dans l'image on obtient un *histogramme normalise*. L'histogramme normalise correspond Ã  une distribution de probabilite empirique (toutes les valeurs sont comprises entre 0 et 1 et la somme des valeurs vaut 1). 
+	
+L'histogramme permet d'obtenir rapidement une information generale sur l'apparence de l'image. Une image *visuellement plaisante* aura generalement un histogramme equilibre (proche d'une fonction plate). Par exemple dans l'image ci-dessous, l'histogramme est tasse sur la gauche; l'image est trop sombre :
+
+.. rst-class:: center
+
+	|cam1| |cam1H|
+
+.. |cam1| image:: camera1.png
+	:width: 200px
+	
+.. |cam1H| image:: camera1Histo.png
+	:width: 280px
+
+Maintenant, l'histogramme est tasse au centre; l'image est grisatre et manque de contraste :
+
+.. rst-class:: center
+
+	|cam2| |cam2H|
+
+.. |cam2| image:: camera2.png
+	:width: 200px
+	
+.. |cam2H| image:: camera2Histo.png
+	:width: 280px
+
+Finalement dans ce dernier exemple, l'histogramme est trop creuse au centre; les noirs sont trop noirs, les blancs trop blancs (on dit que l'image est saturee) :
+
+.. rst-class:: center
+
+	|cam3| |cam3H|
+
+.. |cam3| image:: camera3.png
+	:width: 200px
+	
+.. |cam3H| image:: camera3Histo.png
+	:width: 280px
+	
+L'histogramme ne contient aucune information spatiale et des images tres differentes peuvent avoir des histogrammes similaires. 
+Par exemple les deux images ci-dessous : 
+
+.. rst-class:: center 
+
+	|adv1| |adv2|
+
+.. |adv1| image:: adverserial1.png
+	:width: 200px
+	
+.. |adv2| image:: adverserial2.png
+	:width: 200px
+	
+ont le mÃªme histogramme:
+
+.. image:: adverserialHisto.png
+	:align: center
+	:width: 350px
+	
+
+Formellement, pour une image :math:`f:E\rightarrow [0..n]\subseteq\mathbb{N}`, avec :math:`E` l'ensemble des pixels, l'histogramme de :math:`f` est une fonction :math:`T_f:[0,n]\rightarrow \mathbb{N}` qui, Ã  chaque niveau de gris :math:`v`, associe le nombre d'elements :math:`x` de :math:`E` tel que :math:`f(x)=v` :
+
+.. math::
+
+	T_f(v)=|\{x\in E; \ f(x)=v\}|
+
+
+	
+Transformation d'histogramme
+****************************
+
+En traitement d'image, les *transformations d'histogramme* modifient les images en traitant chaque pixel independamment. Ces transformations sont les plus simples, elles apparaissent dans presque tous les processus de traitement et d'analyse d'images : en pre-traitement pour *normaliser* l'image, ou en post-traitement pour ameliorer la visualisation. 
+
+Etant donnees une image :math:`f : E \rightarrow V`, avec :math:`E` l'ensemble des pixels et :math:`V` l'espace des valeurs, et une fonction :math:`t : V \rightarrow V`. On definit :math:`f_t` l'image :math:`f` transformee par :math:`t`, comme la composition :math:`t \circ f`, c'est-Ã -dire :
+
+.. math::
+
+	\forall x\in E, f_t(x) = t(f(x))
+
+Dans les logiciels de traitement d'images type Photoshop ou Gimp, la fonction :math:`t` est generalement representee par une courbe de transfert, manipulable Ã  la souris:
+	
+.. figure:: courbe_transfert.png
+	:align: center
+
+	La fonction :math:`t` est representee par la courbe noire, on a donc sur l'axe du bas les valeurs de niveau de gris avant transformation et la courbe donne la valeur apres transformation (axe des ordonnees).
+
+Pour connaitre l'histogramme d'une image apres transformation, il suffit d'appliquer la transformation Ã  l'histogramme de l'image d'origine : l'hsitogramme ne contient pas d'information spatial et la transformation d'histogramme n'utilise aucune information spatiale. 
+
+
+Inversion et Introduction Ã  OpenCV
+**********************************
+
+Sous OpenCV, une image est representee par la classe `Mat <http://docs.opencv.org/3.1.0/d6/d6d/tutorial_mat_the_basic_image_container.html>`_ (pour Matrix). Comme le nom le suggere, il s'agit d'un tableau Ã  2 dimensions. La memoire des objets de type ``Mat`` est geree automatiquement avec des *smart pointer* : vous n'aurez normalement pas Ã  vous en soucier. Le type des elements stockes dans une image est indique par une constante de la forme ``CV_8UC3`` qui se lit *8 bit Unsigned Channel 3* (``CV_`` est juste un raccourci pour OpenCV...) : donc une image couleur (3 canneaux RGB) dont les valeurs sont de type unsigned char ([0, 255]).
+
+.. important::
+
+	Dans la suite on utilisera essentiellement deux types d'images :
+	
+		* ``CV_32FC1`` ou plus simplement ``CV_32F`` : les images en niveaux de gris (1 cannal) codees en nombre flottant. Dans ce cas la convention est d'avoir les valeurs des pixels comprises entre 0 (noir) et 1 (blanc)
+		* ``CV_8UC1`` ou plus simplement ``CV_8U`` : les images en niveaux de gris (1 cannal) codees sur 1 octet non signe ([0, 255]). Dans ce cas il faudra faire attention aux depassements de capacites (``255 + 1 == 0`` sur 1 octet...)
+		
+	**Sauf mention contraire, le type par defaut sera** ``CV_32FC1`` **; les valeurs des pixels seront stockes dans des** ``float``.
+
+Il existe de nombreuses facons de creer des objets de type ``Mat``, notamment :
+
+.. code-block:: cpp
+	
+	int height = 12;
+	int width = 21;
+	Mat image = Mat::zeros(height, width, CV_32FC1); // image initialisee Ã  zero de taille 12x21 avec des valeurs en float
+	Mat copie = image.clone(); // copie d'une image existante
+	Mat image2 = Mat::ones(height, width, CV_8UC1); // image initialisee Ã  1 de taille 12x21 avec des valeurs en uchar
+
+L'acces aux elements d'une image peut se faire en recuperant un pointeur sur les donnees brutes ou avec la fonction generique ``at`` qui retourne une reference sur un pixel :
+
+.. code-block:: cpp
+	
+	image.at<float>(3,2) = 7; // modifie la valeur Ã  la position: ligne 3, colonne 2 
+	float v = image.at<float>(0,0); // lit la valeur Ã  la position (0,0);
+
+	uchar v2 = = image2.at<uchar>(0,0); // si les valeurs sont codees sur 1 octet non signe
+	
+La taille d'une image peut Ãªtre connue avec les champs ``cols`` (nombre de colonnes, donc largeur de l'image) et ``rows`` (nombre de lignes, donc hauteur de l'image):
+
+.. code-block:: cpp
+
+	int total = 0;
+	for(int y = 0; y < image.rows; y++)
+		for(int x = 0; x < image.cols; x++)	
+			total += image2.at<uchar>(y, x);
+	
+La classe ``Mat`` permet de *vectoriser* certaines operations par surcharge des operateurs de base, ce qui permet d'eviter d'ecrire des boucles ``for``:
+
+.. code-block:: cpp
+
+	image = image + copie; // realise l'addition des 2 images (somme matricielle)
+	image += 3; // ajoute la valeur 3 Ã  la valeur de chaque pixel de l'image.
+	
+
+.. quiz:: tp1-inverse
+	:title: Inverser une image
+	
+	On souhaite definir une fonction d'inversion des niveau de gris donnee par la transformation :math:`inv` definie  par :math:`\forall x\in E, inv(x)=1-x` (les blancs deviennent noirs et inversement).
+	
+	.. figure:: cameracinv.png
+		:width: 400px
+		:align: center
+		
+		Image du cameraman Ã  gauche et image inversee Ã  droite.
+
+	1) Dans le projet situe sur le bureau de la machine virtuelle. Completez la fonction ``inverse`` du fichier ``tpHistogram.cpp``. Cette fonction prend en entree une image :math:`f` et doit retourner une nouvelle image :math:`f_{inv}`.
+	2) Executez la commande ``make`` Ã  la racine du projet pour compiler. Un executable appele ``inverse`` est genere dans le dossier ``bin``.
+	3) Executez la commande ``./inverse --help`` pour voir les options possibles. **Ceci fonctionnera avec tous les executables generes dans les TPs.**
+	4) Executez la commande ``./inverse -S`` pour executer la commande avec l'option ``-S`` pour afficher le resultat. **Ceci fonctionnera avec tous les executables generes dans les TPs.**
+	5) Executez la commande ``./test -P inverse -S`` pour effectuer un test unitaire sur votre programme. En cas de probleme, le programme affiche la carte des differences par rapport au resultat attendu. **Ceci fonctionnera avec tous les executables generes dans les TPs.**	
+	
+Seuillage
+*********
+
+Soit une image :math:`f : E \rightarrow V`, la valeur maximale (respectivement minimale) de l'ensemble :math:`V` est notee :math:`V_{max}` (respectivement :math:`V_{min}`). Par exemple dans le cas d'une image codee sur 8 bits non signe, on a :math:`V_{min}=0` et :math:`V_{max}=255`.
+Un pixel ayant la valeur :math:`V_{min}` ou :math:`V_{max}` est dit *sature* car sa valeur ne peut plus Ãªtre augmentee (ou diminuee). Le seuillage est une operation qui consiste Ã  saturer les pixels clairs (seuillage haut) ou sombres (seuillage bas) d'une image tout en laissant les autres inchanges. 
+
+Contretement, dans le cas du seuillage haut, on se donne une valeur de seuil :math:`t` dans :math:`V`, et la fonction de transformation :math:`sh_t : V \rightarrow V` est definie ainsi :
+
+.. math::
+
+	\forall x \in V, sh_t(x)=\begin{cases}x \textrm{ si } x\leq t \\ V_{max} \textrm{ sinon}.\end{cases}
+	
+Par exemple, l'image de gauche ci-dessous est une image hematologique sur laquelle ont voit des cellules sanguines. L'image de droite montre un seuil haut realise sur cette image : les pixels gris clairs sont maintenant blancs; les pixels plus sombres n'ont pas ete modifies.
+
+.. rst-class:: center
+
+	|blood| |bloodsh|
+
+.. |blood| image:: blood.png
+	:width: 200px
+	
+.. |bloodsh| image:: blood_seuilhaut.png
+	:width: 200px
+
+Le seuillage bas est defini de maniere symmetrique, on se donne une valeur de seuil :math:`t` dans :math:`V`, et la fonction de transformation :math:`sb_t : V \rightarrow V` est definie ainsi :
+
+.. math::
+
+	\forall x \in V, sb_t(x)=\begin{cases}x \textrm{ si } x>t \\ V_{min} \textrm{ sinon}.\end{cases} 
+	
+L'exemple ci-dessous montre un  exemple de seuil bas : les pixels sombres sont maintenant noirs; les pixels clairs n'ont pas ete modifies.
+
+.. rst-class:: center
+
+	|blood| |bloodsb|
+
+.. |bloodsb| image:: blood_seuilbas.png
+	:width: 200px	
+
+Finalement, on peut egalement definir un seuillage combine, on se donne une valeur de seuil bas :math:`tb` et une valeur de seuil haut :math:`th` dans :math:`V`, et la fonction de transformation :math:`s_t : V \rightarrow V` est definie ainsi :
+
+.. math::
+
+	\forall x \in V, sb_t(x)=\begin{cases}V_{min} \textrm{ si } x \leq tb \\ x \textrm{ si } tb < x \leq th \\ V_{max} \textrm{ sinon}.\end{cases} 
+
+L'exemple ci-dessous montre un  exemple de seuil combine reprenant les effets des deux exemples ci-dessus.
+
+.. rst-class:: center
+
+	|blood| |bloodsc|
+
+.. |bloodsc| image:: blood_seuilcombine.png
+	:width: 200px	
+	
+Le cas particulier d'un seuillage combine oÃ¹ :math:`tb=th` produit une image ne contenant que les valeurs :math:`V_{min}` et :math:`V_{max}`: on parle *d'image binaire* et la transformation est une *binarisation*.
+		
+.. quiz:: tp1-seuil
+	:title: Seuillage combine
+	
+	Completez la fonction ``threshold`` du fichier ``tpHistogram.cpp`` qui realise un seuillage combine de l'image d'entree. 
+	
+	Pensez Ã  valider votre programme avec  la commande ``./test -P threshold -S`` pour effectuer un test unitaire sur votre programme. 
+
+Normalisation d'histogramme
+***************************
+
+Normaliser l'histogramme d'une image :math:`f` consiste Ã  appliquer une transformation d'histogramme Ã  l'image afin d'etendre la plage de valeur de  :math:`f` Ã  l'ensemble des valeurs disponibles. Concretement, si l'on note :math:`f_{min}` et :math:`f_{max}` la valeur minimale et la valeur maximale de l'image, on souhaite trouver une transformation :math:`norm` telle que :math:`norm(f_{min}) = V_{min}` (:math:`V_{min}` etant la valeur minimale que l'on souhaite atteindre) et :math:`norm(f_{max}) = V_{max}` (:math:`V_{max}` etant la valeur maximale que l'on souhaite atteindre). Cela n'est pas suffisant pour determiner :math:`norm`, le modele le plus simple est celui d'une fonction affine, c'est-Ã -fire une fonction de la forme :math:`ax+b` qui trace une droite passant par les points de coordonnees :math:`(f_{min},V_{min})` et :math:`(f_{max},V_{max})`.
+
+Cela donne : 
+
+.. math::
+
+	\forall x \in E, norm(x) = (x-f_{min})\frac{V_{max}-V_{min}}{f_{max}-f_{min}} + V_{min}
+	
+On peut facilement verifier que :math:`norm(f_{min}) = V_{min}`, :math:`norm(f_{max}) = V_{max}` et :math:`norm`  est une fonction affine (on peut l'exprimer sous la forme :math:`norm(x)=ax+b`). L'image ci-dessous presente un exemple de normalisation d'image.
+
+.. figure:: normalize.png
+	:width: 600px
+	:align: center
+	
+	A gauche: image non normalisee qui n'atteind pas la valeur maximale possible dans les claires. A droite, image apres normalisation : la plage de valeur s'etend sur tout l'intervalle disponible.
+
+
+.. attention::
+
+	*normalisation* est un terme utilise dans de nombreux contextes avec des sens souvent proches mais quand mÃªme... differents !
+	
+.. quiz:: tp1-normalisation
+	:title: Normalisation d'histogramme
+	
+
+	Implementez cette transformation dans la fonction ``normalize`` du fichier ``tpHistogram.cpp``. Pensez Ã  valider votre implementation avec la commande ``test``. 
+
+		
+Quantification
+**************
+
+Le seuillage combine permet de reduire le nombre de niveaux de gris Ã  2 dans une image Ã  partir d'un niveau de seuil. L'operation plus generale qui consiste Ã  reduire le nombre de niveaux de gris Ã  :math:`k` valeurs :math:`\{0,\ldots,k-1\}` est appelee *quantification*. Le cas le plus simple est celui de la *quantification uniforme*. Dans ce cas, on commence par decouper l'intervalle :math:`[V_{min}, V_{max}]` en :math:`k` intervalles :math:`\{I_0,\ldots,I_{k-1}\}` de longueurs uniformes. La quantification assigne alors Ã  un pixel de valeur :math:`x`, le numero de l'intervalle qui contient :math:`x`. Finalement, on se remet dans l'intervalle :math:`[V_{min}, V_{max}]`.
+	
+Par exemple, pour quantifier une image prenant ses valeurs dans l'intervalle :math:`[0,1]` sur 3 valeurs, la transformation Ã  appliquer est:
+
+.. math::
+
+	\forall x\in[0,1], q_3(x) = \begin{cases}
+		0 \textrm{ si } x <1/3 \\
+		0.5 \textrm{ si } 1/3 \leq x < 2/3 \\
+		1 \textrm{ sinon.}\\
+	\end{cases}
+
+.. figure:: quantif.png
+	:width: 600px
+	:align: center
+	
+	Image de *Lenna* Ã  differents de niveau de quantification (nombre de niveau de gris indique sous chaque figure).
+
+.. quiz:: tp1-quantification
+	:title: Quantification des niveaux de gris
+	
+
+	Determinez la fonction de transformation correspondant Ã  la quantification uniforme sur :math:`k` niveaux. Implementez cette transformation dans la fonction ``quantize`` du fichier ``tpHistogram.cpp``. Pensez Ã  valider votre implementation avec la commande ``test``. 
+
+
+	
+Egalisation d'histogramme
+*************************
+
+L'operation de normalisation d'histogramme permet d'etendre la plage de valeurs d'une image en etalant de maniere uniforme les niveaux de gris de l'image sur tout l'intervalle de valeurs disponibles. 
+Afin d'ameliorer la qualite visuelle de l'image on peut chercher une transformation plus complexe (non uniforme) en partant du principe qu'une image avec un histogramme plat est generalement agreable.
+Concretement, au lieu de chercher une transformation affine, on cherche une transformation croissante (on veut preserver l'ordre des niveaux des gris) telle que l'histogramme de l'image transformee soit le plus proche possible d'une distribution uniforme.
+
+
+Afin de definir cette transformation, nous avons besoin de la notion *d'histogramme cumule* qui mesure la distribution cumulee des niveaux de gris dans une image.
+Pour un niveau de gris :math:`x`, l'histogramme cumule permet de connaitre la probabilite de tomber sur un pixel de valeur inferieure ou egale Ã  :math:`x` en tirant un pixel au hasard dans l'image.
+
+
+L'histogramme cumule d'une image :math:`f:E\rightarrow [0..n]\subset \mathbb{N}`, note :math:`C_f` est finalement donne par :
+
+.. math::
+	
+	\begin{align}
+	\forall v\in [0,n], C_f(v) & = |\{p \in E; f(p) \leq v \}| \\
+	&= \sum_{i=0}^{v} T_f(i)
+	\end{align}
+	
+L'histogramme cumule se calcule donc simplement Ã  partir de l'histogramme. 
+
+
+Par exemple, soit l'image de 5 pixels par 5 pixels de cote avec des valeurs comprises entre 0 et 4:
+
+.. csv-table:: 
+   :widths: 10, 10, 10, 10, 10
+
+   0,1,2,2,3
+   0,1,2,2,3
+   0,1,2,2,4
+   0,1,2,2,4
+   0,1,2,2,4
+
+On obtient l'histogramme et l'histogramme cumule :
+
+.. csv-table:: 
+   :widths: 35, 10, 10, 10, 10, 10 
+
+   Valeur de niveau de gris, 0, 1, 2, 3, 4
+   Nombre de pixels, 5, 5, 10, 2, 3
+   Histogramme cumule, 5, 10, 20, 22, 25
+   
+OÃ¹ bien sous forme d'une courbe (avec l'histogramme en baton):
+
+.. image:: histoCumuleDemo.png
+	:align: center
+	:width: 350px
+
+L'histogramme cumule est une courbe croissante dont la valeur maximale est egale au nombre de pixel dans l'image. 
+
+Dans l'exemple ci-dessous, l'histogramme cumule comprend 2 phases presques plates (valeurs sombres et claires) et augmente brutalement dans les valeurs intermedaires : cette image est mal equilibree.
+
+.. rst-class:: center
+
+	|badHisto| |badHistoCumul|
+	
+
+.. |badHisto| image:: badHisto.png
+	:width: 300px
+	
+.. |badHistoCumul| image:: badHistoCumul.png
+	:width: 320px
+
+
+On peut remarquer que, en notant :math:`N` le nombre de pixel dans une image :math:`f`, pour une valeur de niveau de gris :math:`v`, :math:`C_f(v)/N` est la proportion de pixels ayant une valeur inferieure ou egale Ã  :math:`v` dans l'image.  Dans une image visuellement *agreable*, l'histogramme cumule est proche de la diagonale, dans ce cas on devrait avoir :math:`v/n = C_f(v)/N` : la proportion du niveau de gris :math:`v` par rapport au niveau de gris maximal :math:`n` est egale Ã  la proportion de pixels ayant une valeur inferieure ou egale Ã  :math:`v` par rapport au nombre total de pixel.
+
+En combinant cette observation avec le fait de vouloir obtenir une valeur minimale egale Ã  :math:`V_{min}` et une valeur maximale egale Ã  :math:`V_{max}`, on obtient la formule *d'egalisation d'histogramme*:
+
+.. math::
+
+	\forall v\in[0..n], eg(v) = \frac{V_{max}-V_{min}}{N}C_f(v) + V_{min}
+ 
+Appliquee Ã  l'image precedente, on obtient le resultat suivant:
+
+.. rst-class:: center 
+
+	|badHistoEg| |badHistoCumulEg|
+	
+
+.. |badHistoEg| image:: badHistoEg.png 
+	:width: 300px
+	
+.. |badHistoCumulEg| image:: badHistoCumulEg.png
+	:width: 320px
+	
+On peut observer que l'histogramme est bien etale sur toute la plage de valeurs.
+L'histogramme cumule est proche de la diagonale. Les niveaux de gris comprenant peu de valeurs sont tasses (visible sur les extremites de l'histogramme), alors que les niveaux de gris comprenant beaucoup de pixels sont etales (milieu de l'histogramme).
+ 
+.. quiz:: tp1-egalisation
+	:title: Egalisation d'histogramme
+	
+
+	Implementez cette transformation dans la fonction ``equalize`` du fichier ``tpHistogram.cpp``. Pensez Ã  valider votre implementation avec la commande ``test``. 
+	
+Seuillage automatique
+*********************
+
+L'objectif de ce dernier exercice est de reutiliser les elements acquis dans les exercices precedents pour comprendre et implementer une transformation decrite dans un autre contexte.
+
+La binarisation au moyen du seuillage combine prend en parametre un niveau de seuillage :math:`t`. Il existe differentes strategie afin de determiner un niveau de seuil automatiquement et ainsi avoir une fonction de seuillage sans parametre. 
+
+La methode d'Otsu fait partie des methodes les plus connues pour cela. 
+Elle est basee sur une approche *classification* : on considere que seuiller l'image Ã  un niveau :math:`t` revient Ã  classifier les pixels de l'image en 2 classes *blanc* et *noir*. 
+On peut alors mesurer la qualite d'un niveau de seuillage par la qualite de la classification qu'il genere. 
+Seuiller l'image de maniere automatique revient alors Ã  trouver le niveau de seuil qui genere la meilleure classification des pixels. 
+
+.. quiz:: tp1-egalisation
+	:title: Egalisation d'histogramme
+	
+
+	Implementez la methode d'Otsu dans la fonction  ``thresholdOtsu`` du fichier ``tpHistogram.cpp``. Cette methode est decrite sur de nombreux sites Web : `documentation OpenCV <http://docs.opencv.org/3.2.0/d7/d4d/tutorial_py_thresholding.html>`_, page `Wikipedia <https://en.wikipedia.org/wiki/Otsu%27s_method>`_... 
+	
+	
+.. [1] La base de code est egalement recuperable `ici <https://github.com/PerretB/ImageProcessingLab>`_
+ 
