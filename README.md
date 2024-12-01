@@ -55,3 +55,12 @@ Each command line tool is associated to a unit test that can be executed with th
 **Important:** The unit tests work by comparing the result of your functions to results produced with reference implementations. Implementation details, especially when working with floatting point values can lead to small disprecancies between similar results. While the test program tries to deal with this issue it can still detect false positives, i.e., say that a function is wrong while it is indeed right. In case of doubt call a professor to check your work.
 
 As with any unit test, it is also possible that the unit tests suffer from false negatives, i.e., say that a program is correct while it is not.
+
+
+## Project chosen :
+NL_Means
+
+[Article](https://github.com/michel-ch/traitement-images/blob/main/image/NL_Means.pdf)
+[Report](https://github.com/michel-ch/traitement-images/blob/main/image/Compte%20rendu%20NL%20Mean%20CHEN%20Michel.pdf)
+[Code](https://github.com/michel-ch/traitement-images/tree/main/image/nlmeansC)
+
