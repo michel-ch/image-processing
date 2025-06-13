@@ -8,13 +8,13 @@ Lab exercises for the  [course on image processing](https://perso.esiee.fr/~perr
 
 ## Organization
 
-There are 5 files to complete, each one corresponds to a course chapter:
+There are 5 files completed, each one corresponds to a course chapter:
 
-1. ``src/tpHistogram.cpp``: histogram manipulation functions [related course chapter](https://perso.esiee.fr/~perretb/I5FM/TAI/histogramme/index.html)
-2. ``src/tpConnectedComponents.cpp`` pixel adjacency and connected components [related course chapter](https://perso.esiee.fr/~perretb/I5FM/TAI/connexity/index.html)
-3. ``src/tpGeometry.cpp`` geometric image transforms [related course chapter](https://perso.esiee.fr/~perretb/I5FM/TAI/geometry/index.html)
-4. ``src/tpConvolution.cpp`` linear image filters [related course chapter](https://perso.esiee.fr/~perretb/I5FM/TAI/convolution/index.html)
-5. ``src/tpMorphology.cpp`` non-linear image filters [related course chapter](https://perso.esiee.fr/~perretb/I5FM/TAI/morpho/index.html)
+1. ``src/tpHistogram.cpp``: histogram manipulation functions [related course chapter](https://perso.esiee.fr/~perretb/I5FM/TAI/histogramme/index.html) Alternative Link on Local [Traitement d’histogramme](https://github.com/michel-ch/image-processing/blob/main/site/Traitement%20d%E2%80%99histogramme%20%E2%80%94%20Documentation%20Traitement%20et%20analyse%20d'images%201.html)
+2. ``src/tpConnectedComponents.cpp`` pixel adjacency and connected components [related course chapter](https://perso.esiee.fr/~perretb/I5FM/TAI/connexity/index.html) Alternative Link on Local [Opérateurs connexes](https://github.com/michel-ch/image-processing/blob/main/site/Op%C3%A9rateurs%20connexes%20%E2%80%94%20Documentation%20Traitement%20et%20analyse%20d'images%201.html)
+3. ``src/tpGeometry.cpp`` geometric image transforms [related course chapter](https://perso.esiee.fr/~perretb/I5FM/TAI/geometry/index.html) Alternative Link on Local [Transformations géométriques](https://github.com/michel-ch/image-processing/blob/main/site/Transformations%20g%C3%A9om%C3%A9triques%20%E2%80%94%20Documentation%20Traitement%20et%20analyse%20d'images%201.html)
+4. ``src/tpConvolution.cpp`` linear image filters [related course chapter](https://perso.esiee.fr/~perretb/I5FM/TAI/convolution/index.html) Alternative Link on Local [Convolution](https://github.com/michel-ch/image-processing/blob/main/site/Convolution%20%E2%80%94%20Documentation%20Traitement%20et%20analyse%20d'images%201.html)
+5. ``src/tpMorphology.cpp`` non-linear image filters [related course chapter](https://perso.esiee.fr/~perretb/I5FM/TAI/morpho/index.html) Alternative Link on Local [Morphologie Mathématique](https://github.com/michel-ch/image-processing/blob/main/site/Morphologie%20Math%C3%A9matique%20%E2%80%94%20Documentation%20Traitement%20et%20analyse%20d'images%201.html)
 
 ## How to
 
@@ -59,6 +59,8 @@ As with any unit test, it is also possible that the unit tests suffer from false
 
 ## Project chosen :
 NL_Means
+
+[Introduction à la recherche](https://perso.esiee.fr/~perretb/I5FM/TAI/recherche/index.html) Alternative Link on Local [Introduction à la recherche](https://github.com/michel-ch/image-processing/blob/main/site/Introduction%20%C3%A0%20la%20recherche%20%E2%80%94%20Documentation%20Traitement%20et%20analyse%20d'images%201.html)
 
 [Article](https://github.com/michel-ch/traitement-images/blob/main/image/NL_Means.pdf)
 
