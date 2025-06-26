@@ -64,7 +64,7 @@ NL_Means
 
 [Article](image/NL_Means.pdf)
 
-[Report](image/Compte rendu NL Mean CHEN Michel.pdf)
+[Report](image/Compte_rendu_NL_Mean_CHEN_Michel.pdf)
 
 [Code](image/nlmeansC)
 
