@@ -62,9 +62,9 @@ NL_Means
 
 [Introduction à la recherche](https://perso.esiee.fr/~perretb/I5FM/TAI/recherche/index.html) Alternative Link on Local [Introduction à la recherche](https://github.com/michel-ch/image-processing/blob/main/site/Introduction%20%C3%A0%20la%20recherche%20%E2%80%94%20Documentation%20Traitement%20et%20analyse%20d'images%201.html)
 
-[Article](https://github.com/michel-ch/traitement-images/blob/main/image/NL_Means.pdf)
+[Article](image/NL_Means.pdf)
 
-[Report](https://github.com/michel-ch/traitement-images/blob/main/image/Compte%20rendu%20NL%20Mean%20CHEN%20Michel.pdf)
+[Report](image/Compte rendu NL Mean CHEN Michel.pdf)
 
-[Code](https://github.com/michel-ch/traitement-images/tree/main/image/nlmeansC)
+[Code](image/nlmeansC)
 
